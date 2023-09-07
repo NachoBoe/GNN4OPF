@@ -75,6 +75,40 @@ def load_data_df(archivo):
     # Muestra el DataFrame resultante
     return load_data
 
+### LOAD DATA
+
+def gen_data_df(archivo):
+    '''
+    Devuelve un dataframe con generator data a partir del archivo
+    '''
+    # Abre el archivo en modo binario y decodifica con la codificación adecuada
+    with open(archivo, 'rb') as archivo:
+        contenido = archivo.read().decode('ISO-8859-1')  # Cambia ISO-8859-1 a la codificación correcta si es diferente
+
+    # Divide el contenido en líneas
+    lineas = contenido.split('\n')
+
+    # Encuentra la posición de "END OF SYSTEM-WIDE DATA"
+    indice_inicio = np.where(np.array(lineas) == '0 / END OF BUS DATA, BEGIN LOAD DATA\r')[0][0]
+    indice_fin = np.where(np.array(lineas) == '0 / END OF LOAD DATA, BEGIN FIXED SHUNT DATA\r')[0][0]
+
+    # Elimina las líneas vacías y las líneas de comentario
+    lineas = [linea.strip() for linea in lineas[indice_inicio + 1:indice_fin] if linea.strip() and not linea.startswith('@!')]
+
+    # Divide las líneas en columnas usando espacios en blanco como separador
+    datos_carga = [linea.split(',') for linea in lineas]
+
+    # Define los nombres de las columnas
+    nombres_columnas = ['I', 'ID','STAT','AREA','ZONE', 'PL', 'QL', 'IP', 'IQ', 'YP','YQ', 'OWNER','SCALE','INTRPT',  'DGENP', 'DGENQ', 'DGENF']
+    # Crea el DataFrame
+    load_data = pd.DataFrame(datos_carga, columns=nombres_columnas)
+
+    # Convierte las columnas numéricas a tipos numéricos
+    columnas_numericas = ['PL', 'QL', 'IP', 'IQ', 'YP','YQ','SCALE','INTRPT',  'DGENP', 'DGENQ', 'DGENF']
+    load_data[columnas_numericas] = load_data[columnas_numericas].apply(pd.to_numeric)
+
+    # Muestra el DataFrame resultante
+    return load_data
 
 ### SHUNT DATA
 
