@@ -70,14 +70,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.lr,betas=cfg.tr
 criterion = nn.MSELoss()  # Change the loss function as needed
 
 # Entrenamiento
-best_acc = 0
+best_acc = torch.inf
 best_epoch = 0
 for epoch in range(cfg.training.num_epochs):
     train_loss, train_metric = run_epoch(model, train_loader, optimizer, criterion,epoch,writer)
     val_loss, val_metric = evaluate(model, val_loader, criterion, epoch,writer)
     print(f"Epoch {epoch+1}/{cfg.training.num_epochs}, Train Loss: {train_loss:.4f}, Train Metric: {train_metric:.4f},  Val Loss: {val_loss:.4f}, Val Metric: {val_metric:.4f}")
     # Save best model
-    if val_metric > best_acc:
+    if val_metric < best_acc:
         best_acc = val_metric
         best_epoch = epoch
         torch.save(model.state_dict(), weights_dir / 'best_model.pt')
