@@ -31,7 +31,7 @@ args = parser.parse_args()
 
 # Load config file
 cfg = OmegaConf.load(args.cfg)
-outdir = Path(cfg.outdir) / datetime.now().isoformat()
+outdir = Path(cfg.outdir) / cfg.data.red / cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
 weights_dir = outdir / 'weights'
 weights_dir.mkdir(parents=True, exist_ok=True)
 
@@ -50,12 +50,12 @@ num_nodes, num_gens, edge_index, edge_weights, feature_mask = load_net(cfg.data.
 
 # Set model
 if cfg.model.model == 'GNN_global':
-    model = GNN_global(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,cfg.model.K,num_nodes,num_gens,cfg.model.batch_norm).to(device)
+    model = GNN_global(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,cfg.model.K,num_nodes,num_gens, feature_mask, cfg.model.batch_norm).to(device)
 elif cfg.model.model == 'FCNN_global':
     # Add in and out dimension
     cfg.model.layers[0] *= num_nodes
     cfg.model.layers[-1] *= num_gens
-    model = FCNN_global(cfg.model.layers,len(cfg.model.layers)-1,num_nodes,cfg.model.batch_norm).to(device)
+    model = FCNN_global(cfg.model.layers,len(cfg.model.layers)-1,num_nodes, feature_mask, cfg.model.batch_norm).to(device)
 elif cfg.model.model == 'GNN_local':
     model = GNN_Local(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,cfg.model.K,feature_mask,num_nodes,cfg.model.batch_norm).to(device)
 elif cfg.model.model == 'FCNN_local':
@@ -70,14 +70,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.lr,betas=cfg.tr
 criterion = nn.MSELoss()  # Change the loss function as needed
 
 # Entrenamiento
-best_acc = 0
+best_acc = 1000
 best_epoch = 0
 for epoch in range(cfg.training.num_epochs):
     train_loss, train_metric = run_epoch(model, train_loader, optimizer, criterion,epoch,writer)
     val_loss, val_metric = evaluate(model, val_loader, criterion, epoch,writer)
     print(f"Epoch {epoch+1}/{cfg.training.num_epochs}, Train Loss: {train_loss:.4f}, Train Metric: {train_metric:.4f},  Val Loss: {val_loss:.4f}, Val Metric: {val_metric:.4f}")
     # Save best model
-    if val_metric > best_acc:
+    if val_metric < best_acc:
         best_acc = val_metric
         best_epoch = epoch
         torch.save(model.state_dict(), weights_dir / 'best_model.pt')

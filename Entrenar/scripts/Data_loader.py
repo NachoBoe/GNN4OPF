@@ -71,13 +71,10 @@ def load_data(data_path, batch_size, normalize_X, normalize_Y, PQVd, device):
         
     y = np.load(os.path.join(data_path, 'p_opt.npy'))
 
+
     # Separar en X e Y
     X_tensor = torch.Tensor(X).to(device)
-    y_tensor = torch.Tensor(y[:,:,0]).to(device)
-
-    wo_ext_grid = False
-    if wo_ext_grid:
-        y_tensor[:,0] = 0
+    y_tensor = torch.Tensor(y[:,:,0:1]).to(device)
 
     # dataset = TensorDataset(X_tensor, y_tensor)
     X_train,X_val,y_train,y_val = train_test_split(X_tensor,y_tensor,test_size=0.2,random_state=42)

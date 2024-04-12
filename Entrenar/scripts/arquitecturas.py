@@ -6,7 +6,7 @@ from torch_geometric.nn import TAGConv, GATConv
 from torch_geometric.nn.norm import BatchNorm, InstanceNorm, GraphNorm
 
 class GNN_global(nn.Module):
-    def __init__(self, dim, edge_index,edge_weights, num_layers, K, num_nodes, num_gens,batch_norm=True):
+    def __init__(self, dim, edge_index,edge_weights, num_layers, K, num_nodes, num_gens, feature_mask, batch_norm=True):
         super(GNN_global, self).__init__()
 
         self.num_layers = num_layers
@@ -16,6 +16,7 @@ class GNN_global(nn.Module):
         self.dim = dim
         self.edge_weights = edge_weights
         self.batch_norm = batch_norm
+        self.feature_mask = feature_mask
         if self.batch_norm:
           self.batchnorm = torch.nn.ModuleList()
         for layer in range(num_layers-1):
@@ -23,7 +24,7 @@ class GNN_global(nn.Module):
           if self.batch_norm:
             self.batchnorm.append(BatchNorm(num_nodes))
         
-        self.fcnn = torch.nn.Linear(dim[-2]*num_nodes,num_gens)
+        self.fcnn = torch.nn.Linear(dim[-2]*num_nodes,dim[-1]*num_nodes)
 
         self.edge_index = edge_index
         self.relu = nn.LeakyReLU()
@@ -45,28 +46,35 @@ class GNN_global(nn.Module):
           out = relu(out)
         out = out.reshape(-1,self.dim[-2]*self.num_nodes)
         out = fcnn(out)
-        x = out.squeeze()
-
-        return x
+        out = out.reshape(-1, self.num_nodes, self.dim[-1])
+        out *= self.feature_mask.unsqueeze(-1).repeat(1, self.dim[-1])
+        # x = out.squeeze()
+        
+        return out
 
 class FCNN_global(nn.Module):
 
-    def __init__(self, dim, num_layers, num_nodes, batch_norm=True):
+    def __init__(self, dim, num_layers, num_nodes, feature_mask, batch_norm=True):
         super(FCNN_global, self).__init__()
 
         self.num_nodes = num_nodes
         self.num_layers = num_layers
         self.linears = torch.nn.ModuleList()
         self.dim = dim
-        self.batch_norm = True
+        self.batch_norm = batch_norm
+        self.feature_mask = feature_mask
         if self.batch_norm:
           self.batchnorm = torch.nn.ModuleList()
         
-        for layer in range(num_layers):
+        for layer in range(num_layers-1):
           self.linears.append(nn.Linear(dim[layer],dim[layer+1]))
           if self.batch_norm:
             self.batchnorm.append(BatchNorm(dim[layer+1]))
         self.relu = nn.LeakyReLU()
+
+        self.linears.append(nn.Linear(dim[num_layers - 1], dim[-1] * num_nodes))
+
+
 
     def forward(self, x):
 
@@ -86,6 +94,8 @@ class FCNN_global(nn.Module):
           out = relu(out)
         
         out = linears[num_layers-1](out)
+        out = out.reshape(-1, self.num_nodes, self.dim[-1])
+        out *= self.feature_mask.unsqueeze(-1).repeat(1, self.dim[-1])
         return out
 
 
@@ -97,6 +107,7 @@ class GNN_Local(nn.Module):
         self.num_layers = num_layers
         self.convs = torch.nn.ModuleList()
         self.edge_weights = edge_weights
+        self.dim = dim
         if self.batch_norm:
           self.batchnorm = torch.nn.ModuleList()
         for layer in range(num_layers):
@@ -127,9 +138,9 @@ class GNN_Local(nn.Module):
           out = relu(out)
         
         out = convs[-1](out,self.edge_index, self.edge_weights)
-        x = out.squeeze()
+  
 
         # Apply the feature mask to the output features
-        x = x * feature_mask
+        x = out * feature_mask.unsqueeze(-1).repeat(1, self.dim[-1])
 
         return x
