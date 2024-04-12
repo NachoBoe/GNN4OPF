@@ -7,7 +7,7 @@ model:
   K: [4, 4, 4]
 
 data:
-  data_path: /home/tomas/Desktop/GNN4OPF/data/data_nueva/uniforme_07_13_red118
+  data_path: ../data/data_nueva/uniforme_07_13_red118
   red: '118' # 30 o 118
   normalize_X: True
   normalize_Y: False
