@@ -13,11 +13,12 @@ gen_P_data = pandas.read_csv('./scripts/datos_ute_para_psse/PGEN.csv')
 gen_Q_data = pandas.read_csv('./scripts/datos_ute_para_psse/QGEN.csv')
 
 # Get list of columns
-columns_load_P = load_P_data.columns.tolist()
-columns_load_Q = load_Q_data.columns.tolist()
-comumns_gen_P = gen_P_data.columns.tolist()
-columns_gen_Q = gen_Q_data.columns.tolist()
-cant_datos = len(columns_load_P)
+columns_load_P = load_P_data.columns.tolist().remove("fecha")
+columns_load_Q = load_Q_data.columns.tolist().remove("fecha")
+comumns_gen_P = gen_P_data.columns.tolist().remove("fecha")
+columns_gen_Q = gen_Q_data.columns.tolist().remove("fecha")
+
+cant_datos = columns_load_P.shape[0]
 
 # Values of default loads for buses that dont have Qload
 ierr, [load_numbers] = psspy.aloadint(sid=-1, flag=4, string="NUMBER")
