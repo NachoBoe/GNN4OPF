@@ -24,6 +24,9 @@ from scripts.Data_loader import load_net, load_data
 from scripts.metric import NormalizedError
 from scripts.train_eval import run_epoch, evaluate
 
+import warnings
+warnings.filterwarnings('ignore')
+
 # Parse arguments
 parser = argparse.ArgumentParser(description='Entrenar modelo')
 parser.add_argument('--cfg', type=str, default=None, help='Path to config file')
@@ -63,7 +66,7 @@ elif cfg.model.model == 'FCNN_local':
     model = GNN_Local(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,K,feature_mask,num_nodes,cfg.model.batch_norm).to(device)
 
 # Load data
-train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,cfg.data.PQVd,device)
+train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,device)
 
 # Set optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.lr,betas=cfg.training.betas,weight_decay=cfg.training.weight_decay)
@@ -75,7 +78,7 @@ best_epoch = 0
 for epoch in range(cfg.training.num_epochs):
     train_loss, train_metric = run_epoch(model, train_loader, optimizer, criterion,epoch,writer)
     val_loss, val_metric = evaluate(model, val_loader, criterion, epoch,writer)
-    print(f"Epoch {epoch+1}/{cfg.training.num_epochs}, Train Loss: {train_loss:.4f}, Train Metric: {train_metric:.4f},  Val Loss: {val_loss:.4f}, Val Metric: {val_metric:.4f}")
+    print(f"Epoch {epoch+1}/{cfg.training.num_epochs}, Train Loss: {train_loss:.8f}, Train Metric: {train_metric:.4f},  Val Loss: {val_loss:.8f}, Val Metric: {val_metric:.4f}")
     # Save best model
     if val_metric < best_acc:
         best_acc = val_metric
@@ -89,7 +92,7 @@ for epoch in range(cfg.training.num_epochs):
 
 # Evaluacion
 test_loss, test_metric = evaluate(model, test_loader, criterion,None,writer,test=True)
-print(f"Test Loss: {test_loss:.5f}, Test Metric: {test_metric:.5f}")
+print(f"Test Loss: {test_loss:.8f}, Test Metric: {test_metric:.4f}")
 
 # log hyperparameters
 writer.add_hparams(

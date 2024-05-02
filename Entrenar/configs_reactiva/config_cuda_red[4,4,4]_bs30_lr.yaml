@@ -1,0 +1,23 @@
+outdir: runs
+
+model:
+  batch_norm: True
+  model: cuda
+  layers: [1e-3]
+  K: [3,256,256,1]
+
+data:
+  data_path: ../data/data_reactiva/uniforme_07_13_red[4,4,4]
+  red: '[4,4,4]'
+  normalize_X: True
+  normalize_Y: False
+
+training:
+  device: '64'
+  batch_size: 30
+  lr: 
+  num_epochs: 500
+  early_stopping: 30
+  betas: [0.9, 0.999]
+  weight_decay: 0
+  seed: 42

@@ -61,15 +61,11 @@ def load_net(red,device="cuda"):
 
 
 
-def load_data(data_path, batch_size, normalize_X, normalize_Y, PQVd, device):
+def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
     
     # Levantar los datos
-    if PQVd:
-        X = np.load(os.path.join(data_path, 'PQVd.npy'))
-    else:
-        X = np.load(os.path.join(data_path, 'input_load.npy'))
-        
-    y = np.load(os.path.join(data_path, 'p_opt.npy'))
+    X = np.load(os.path.join(data_path, 'input.npy'))
+    y = np.load(os.path.join(data_path, 'vm_pu_opt.npy'))
 
 
     # Separar en X e Y
