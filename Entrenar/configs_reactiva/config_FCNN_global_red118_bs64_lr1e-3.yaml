@@ -7,8 +7,8 @@ model:
   K: [5,5,5]
 
 data:
-  data_path: ../data/data_reactiva/uniforme_07_13_red30
-  red: '30'
+  data_path: ../data/data_reactiva/uniforme_07_13_red118
+  red: '118'
   normalize_X: True
   normalize_Y: False
 

@@ -4,10 +4,10 @@
 batch_norm_options=(True False)
 device_options=('cuda')
 batch_size_options=(64 128)
-lr_options=(1e-4 2e-5)
+lr_options=(1e-3 1e-4)
 red_options=('30' '118')
 K_options=("[4,4,4]" "[3,3,3]" "[5,5,5]")
-layers_options=("[3,64,128,1]" "[3,256,256,1]" "[3,512,512,1]")
+layers_options=("[3,64,64,1]" "[3,256,256,1]" "[3,512,512,1]")
 
 # Tomar model_option de la línea de comandos
 model_option=$1
@@ -57,6 +57,8 @@ training:
   betas: [0.9, 0.999]
   weight_decay: 0
   seed: 42
+  initial_metric_epoch: 10
+  metric_frec: 30
 EOF
 
     echo "$filename"

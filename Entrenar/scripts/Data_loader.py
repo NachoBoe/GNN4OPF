@@ -56,7 +56,7 @@ def load_net(red,device="cuda"):
     feature_mask[idx_gens] = 1
     feature_mask = torch.Tensor(feature_mask).type(torch.int32).to(device)
 
-    return num_nodes, num_gens, edge_index, edge_weights, feature_mask
+    return num_nodes, num_gens, edge_index, edge_weights, feature_mask, net
 
 
 
