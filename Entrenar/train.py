@@ -7,6 +7,8 @@ import torchvision.transforms as transforms
 import sklearn.metrics as metrics
 import pandas as pd
 import numpy as np
+import os
+import json
 import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
@@ -49,7 +51,7 @@ torch.manual_seed(cfg.training.seed)
 device = cfg.training.device
 
 # Set network
-num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,device)
+num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,cfg.data.red_path,device)
 
 # Set model
 if cfg.model.model == 'GNN_global':
@@ -99,15 +101,15 @@ for epoch in range(cfg.training.num_epochs):
         torch.save(model.state_dict(), weights_dir / 'best_model.pt')
         ## save a json with the best values
         data = {
-        'model_name': outdir,
+        'model_name': str(outdir),
         'val_loss': val_loss,
         'val_metric': val_metric,
         'val_p_loss': last_val_metric_ploss
         }
+        with open(outdir / 'best_model_info.json', 'w') as file:
+            json.dump(data, file)
 
-    # Serialize JSON data and write it to a file
-    with open('outdir/best_model_info.json', 'w') as file:
-        json.dump(data, file)
+        
         
     # Early stopping
     if epoch - best_epoch > cfg.training.early_stopping:

@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-def load_net(red,device="cuda"):
+def load_net(red,red_path,device="cuda"):
     if red == '30':
         net = pp.networks.case30()
         z_trafos = net.trafo[['hv_bus', 'lv_bus']].to_numpy().astype(np.int32)
@@ -26,6 +26,14 @@ def load_net(red,device="cuda"):
             [0.0282, 0.2074],
             [0.0003, 0.00405]
         ])
+    elif red == 'uru':
+        net = pp.from_pickle(red_path)
+        # r = net.trafo['vkr_percent'].to_numpy() / 100 * net.sn_mva / net.trafo['sn_mva'].to_numpy()
+        r = net.trafo['vkr_percent'].to_numpy() / 100 * 100 / net.trafo['sn_mva'].to_numpy()
+        # z = net.trafo['vkr_percent'].to_numpy() / 100 * net.sn_mva / net.trafo['sn_mva'].to_numpy()
+        z = net.trafo['vk_percent'].to_numpy() / 100 * 100 / net.trafo['sn_mva'].to_numpy()
+        x = np.sqrt(z**2 - r**2)
+        z_trafos = np.stack((r,x),axis=1)
 
     num_nodes = len(net.bus)
     num_gens = len(net.gen) + len(net.ext_grid)
@@ -34,7 +42,18 @@ def load_net(red,device="cuda"):
     lineas = net.line[['from_bus', 'to_bus']].to_numpy().astype(np.int32)
     trafos = net.trafo[['hv_bus', 'lv_bus']].to_numpy().astype(np.int32)
     edge_index = np.append(lineas, trafos,axis=0)
-    edge_index = torch.Tensor(edge_index).t().type(torch.int64).to(device)
+    # edge_index = torch.Tensor(edge_index).t().type(torch.int64).to(device)
+
+    # Esto se agrego para que ande en la de uru, anda tb en ieee
+    indices_from = []
+    indices_to = []
+    for item in edge_index[:,0]:
+        # Encuentra todos los índices en lista_principal para el item actual de otra_lista
+        indices_from.extend([index for index, value in enumerate(net.bus.reset_index()['index'].to_list()) if value == item])
+    for item in edge_index[:,1]:
+        indices_to.extend([index for index, value in enumerate(net.bus.reset_index()['index'].to_list()) if value == item])
+    indices = np.array([indices_from, indices_to])
+    edge_index = torch.Tensor(indices).type(torch.int64).to(device)
 
     edge_index_T = edge_index.clone()
     edge_index_T[1, :] = edge_index[0, :]
@@ -43,18 +62,31 @@ def load_net(red,device="cuda"):
 
     # Armar matriz de pesos
     k = 10
-    z_lineas =  net.line[['r_ohm_per_km', 'x_ohm_per_km']].to_numpy() * 100 / np.expand_dims((net.bus['vn_kv'].to_numpy()[net.line['from_bus'].to_numpy()])**2,axis=1)
+    z_lineas =  net.line[['r_ohm_per_km', 'x_ohm_per_km']].to_numpy() * 100 / np.expand_dims((net.bus['vn_kv'][net.line['from_bus'].to_numpy()].to_numpy())**2,axis=1)
     edge_weights = np.append(z_lineas, z_trafos,axis=0)
     edge_weights = torch.Tensor(np.e**(-k*(edge_weights[:,0]**2 + edge_weights[:,1]**2))).to(device)
     edge_weights = torch.cat((edge_weights, edge_weights), dim=0)
 
     # Armar mascara de generadores para la salida
-    idx_gen = net.gen["bus"].to_numpy()
-    idx_grid = net.ext_grid["bus"].to_numpy()
-    idx_gens = np.append(idx_gen,idx_grid,axis=0)
+
+    # idx_gen = net.gen["bus"].to_numpy()
+    # idx_grid = net.ext_grid["bus"].to_numpy()
+    # idx_gens = np.append(idx_gen,idx_grid,axis=0)
+
+    # Esto se agrego para que ande en la red de uru, pero tb anda en ieee
+    idx_bus = net.bus.reset_index()['index'].to_list()
+    idx_gen_bus = net.gen.bus.to_list()
+    idx_grid_bus = net.ext_grid.bus.to_list()
+    idx_gen = [i for i, num in enumerate(idx_bus) if num in idx_gen_bus]
+    idx_grid = [i for i, num in enumerate(idx_bus) if num in idx_grid_bus]
+    idx_gens = idx_gen + idx_grid
+
     feature_mask = np.zeros(len(net.bus.index), dtype=int)
     feature_mask[idx_gens] = 1
     feature_mask = torch.Tensor(feature_mask).type(torch.int32).to(device)
+
+    print("edge_index",edge_index)
+    print("edge_weights",len(edge_weights))
 
     return num_nodes, num_gens, edge_index, edge_weights, feature_mask, net
 
@@ -71,6 +103,8 @@ def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
     # Separar en X e Y
     X_tensor = torch.Tensor(X).to(device)
     y_tensor = torch.Tensor(y[:,:,0:1]).to(device)
+    print("X_tensor", X_tensor.shape)
+    print("y_tensor", y_tensor.shape)
 
     # dataset = TensorDataset(X_tensor, y_tensor)
     X_train,X_val,y_train,y_val = train_test_split(X_tensor,y_tensor,test_size=0.2,random_state=42)

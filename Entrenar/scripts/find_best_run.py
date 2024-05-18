@@ -31,26 +31,26 @@ def find_best_run_from_tfevents(path, k=10):
 
     return k_best_trains
 
-def find_best_run_from_tfevents(path, k=10):
+def find_best_run(path, k=10, metric = "val_ploss"):
     '''
     Encuentra los mejores k entrenamientos en un directorio, a partir de los info.json
     '''
-    last = []
+    best = []
     entrenamiento = []
 
     for file in os.listdir(path):
-        with open('datos.json', 'r') as f:
-            datos = json.load(f)
+        with open('best_model_info.json', 'r') as f:
+            values = json.load(f)
 
-        for event in events:
-            evento_final = event
         try:
-            last.append(evento_final.summary.value[0].tensor.float_val[0])
+            key = values.get(metric)
+            best.append(key)
             entrenamiento.append(file)
+
         except:
             pass
 
-    indices_ordenados = sorted(range(len(last)), key=lambda i: last[i], reverse=False)
+    indices_ordenados = sorted(range(len(best)), key=lambda i: best[i], reverse=False)
     best_values = indices_ordenados[:k]
     k_best_trains = [entrenamiento[i] for i in best_values]
 
@@ -61,7 +61,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Encuentra los mejores k entrenamientos en un directorio, a partir de los events.out.tfevents')
     parser.add_argument('folder_path', type=str, help='Carpeta con todos los entrenamientos')
     parser.add_argument('-k', type=int, default=10, help='Número de los mejores entrenamientos a encontrar (por defecto: 10)')
+    # parser.add_argument('metric', type=str, default='val_ploss', help='Carpeta con todos los entrenamientos')
+
     args = parser.parse_args()
 
-    k_best_trains = find_best_run(args.folder_path, args.k)
+    k_best_trains = find_best_run_from_tfevents(args.folder_path, args.k)
     print(k_best_trains)

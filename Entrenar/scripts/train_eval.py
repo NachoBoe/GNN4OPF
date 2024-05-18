@@ -56,6 +56,9 @@ def evaluate(model, data_loader, criterion,calculate_ploss_metric,net,epoch=None
         for idx, data in enumerate(data_loader):
             output = model(data[0])
             target = data[1]
+            id_gen = [j for j, num in enumerate(net.bus.reset_index()['index'].to_list()) if num in net.gen.bus.to_list()]
+            # print("output",output.squeeze()[:,id_gen])
+            # print("target",target.squeeze()[:,id_gen])
             loss = criterion(output, target)  # target should contain true values for nodes with missing features
             total_loss += loss.item()
             # Calcular la métrica
