@@ -54,11 +54,6 @@ class PlossMetric(nn.Module):
         loss = 0
         converged = 0
         for i in range(X.shape[0]):
-            # self.net.load.loc[:,'p_mw'] = X_np[i,self.net.load["bus"].to_list(),0]
-            # self.net.load.loc[:,'q_mvar'] = X_np[i,self.net.load["bus"].to_list(),1]
-            # self.net.gen.loc[:,'p_mw'] =  X_np[i,self.net.gen["bus"].to_list(),2]
-            # self.net.gen.loc[:,'vm_pu'] =  y_np[i,self.net.gen["bus"].to_list(),0]
-
             # se agrega para que ande en la red de uru, tb anda en ieee. Lo de arriba era lo de antes
             id_load = [j for j, num in enumerate(self.net.bus.reset_index()['index'].to_list()) if num in self.net.load.bus.to_list()]
             id_gen = [j for j, num in enumerate(self.net.bus.reset_index()['index'].to_list()) if num in self.net.gen.bus.to_list()]
