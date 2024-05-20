@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-def load_net(red,red_path,device="cuda"):
+def load_net(red,red_path,target,device="cuda"):
     if red == '30':
         net = pp.networks.case30()
         z_trafos = net.trafo[['hv_bus', 'lv_bus']].to_numpy().astype(np.int32)
@@ -76,13 +76,19 @@ def load_net(red,red_path,device="cuda"):
     # Esto se agrego para que ande en la red de uru, pero tb anda en ieee
     idx_bus = net.bus.reset_index()['index'].to_list()
     idx_gen_bus = net.gen.bus.to_list()
-    idx_grid_bus = net.ext_grid.bus.to_list()
-    idx_gen = [i for i, num in enumerate(idx_bus) if num in idx_gen_bus]
-    idx_grid = [i for i, num in enumerate(idx_bus) if num in idx_grid_bus]
-    idx_gens = idx_gen + idx_grid
+    # idx_grid_bus = net.ext_grid.bus.to_list()
+    idx_gens = [i for i, num in enumerate(idx_bus) if num in idx_gen_bus]
+    # idx_grid = [i for i, num in enumerate(idx_bus) if num in idx_grid_bus]
+    # idx_gens = idx_gen + idx_grid
+    idx_Sgen_bus = net.sgen.bus.loc[net.sgen.controllable == True].to_list()
+    idx_Sgens = [i for i, num in enumerate(idx_bus) if num in idx_Sgen_bus]
+    if target=='vm_pu_opt':
+        ids = idx_gens
+    elif target=='q_switch_shunt_opt':
+        ids = idx_Sgens
 
     feature_mask = np.zeros(len(net.bus.index), dtype=int)
-    feature_mask[idx_gens] = 1
+    feature_mask[ids] = 1
     feature_mask = torch.Tensor(feature_mask).type(torch.int32).to(device)
 
     print("edge_index",edge_index)
@@ -93,11 +99,14 @@ def load_net(red,red_path,device="cuda"):
 
 
 
-def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
+def load_data(data_path, batch_size, normalize_X, normalize_Y,target, device):
     
     # Levantar los datos
     X = np.load(os.path.join(data_path, 'input.npy'))
-    y = np.load(os.path.join(data_path, 'vm_pu_opt.npy'))
+    if target=='vm_pu_opt':
+        y = np.load(os.path.join(data_path, 'vm_pu_opt.npy'))
+    elif target=='q_switch_shunt_opt':
+        y = np.load(os.path.join(data_path, 'q_switch_shunt_opt.npy'))
 
 
     # Separar en X e Y

@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 # Load config file
 cfg = OmegaConf.load(args.cfg)
-outdir = Path(cfg.outdir) / cfg.data.red / cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
+outdir = Path(cfg.outdir) / cfg.data.red / cfg.data.target /cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
 weights_dir = outdir / 'weights'
 weights_dir.mkdir(parents=True, exist_ok=True)
 
@@ -51,7 +51,7 @@ torch.manual_seed(cfg.training.seed)
 device = cfg.training.device
 
 # Set network
-num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,cfg.data.red_path,device)
+num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,cfg.data.red_path,cfg.data.target,device)
 
 # Set model
 if cfg.model.model == 'GNN_global':
@@ -68,7 +68,7 @@ elif cfg.model.model == 'FCNN_local':
     model = GNN_Local(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,K,feature_mask,num_nodes,cfg.model.batch_norm).to(device)
 
 # Load data
-train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,device)
+train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,cfg.data.target,device)
 
 # Set optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.lr,betas=cfg.training.betas,weight_decay=cfg.training.weight_decay)
