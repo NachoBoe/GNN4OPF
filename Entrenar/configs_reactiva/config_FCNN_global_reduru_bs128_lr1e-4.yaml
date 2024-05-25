@@ -8,7 +8,7 @@ model:
 
 data:
   data_path: ../data/data_reactiva/uru
-  target: 'vm_pu_opt'
+  target: 'q_switch_shunt_opt'
   red: 'uru'
   red_path: '/home/iboero/grafos_proyecto/uy_pp_net_v13_(sin_eolico_ni_solar).p'
   normalize_X: False
