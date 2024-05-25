@@ -66,7 +66,7 @@ def find_best_run(path, k=10):
         os.rename(os.path.join(path, k_best_trains[0]), os.path.join(path, 'best-'+k_best_trains[0]))
 
     return zip(k_best_trains, k_best_train_values)
-
+jjjj
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Encuentra los mejores k entrenamientos en un directorio, a partir de los events.out.tfevents')
