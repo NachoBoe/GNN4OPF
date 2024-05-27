@@ -66,10 +66,10 @@ def load_net(red,red_path,device="cuda"):
 
 
 
-def load_data(data_path, batch_size, normalize_X, device):
+def load_data(data_path, batch_size, normalize_X, red, device):
     
     # Levantar los datos
-    X_tensor = (torch.Tensor( np.load(data_path+f'/PlQlPg{red}.npy') ) / 100).to(device)
+    X_tensor = (torch.Tensor(np.load(data_path+f'/PlQlPg{red}.npy') ) / 100).to(device)
 
     dataset = TensorDataset(X_tensor)
     X_train,X_test = train_test_split(dataset,test_size=0.2,random_state=42)
@@ -86,12 +86,12 @@ def load_data(data_path, batch_size, normalize_X, device):
         X_val  = (X_val - mean) / std
         X_test  = (X_test - mean) / std
 
-    dataset_train = TensorDataset(X_train, y_train)
-    dataset_val = TensorDataset(X_val, y_val)
-    dataset_test = TensorDataset(X_test, y_test)
+    # dataset_train = TensorDataset(X_train)
+    # dataset_val = TensorDataset(X_val)
+    # dataset_test = TensorDataset(X_test)
 
-    train_loader = DataLoader(dataset_train, batch_size=batch_size)
-    val_loader = DataLoader(dataset_val, batch_size=batch_size)
-    test_loader = DataLoader(dataset_test, batch_size=batch_size)
+    train_loader = DataLoader(X_train, batch_size=batch_size)
+    val_loader = DataLoader(X_val, batch_size=batch_size)
+    test_loader = DataLoader(X_test, batch_size=batch_size)
 
     return train_loader, val_loader, test_loader

@@ -24,6 +24,8 @@ from torch.utils.tensorboard import SummaryWriter
 from scripts.arquitecturas import GNNUnsupervised
 from scripts.Data_loader import load_net, load_data
 from scripts.train_eval import run_epoch, evaluate
+from scripts.utils import get_Ybus, get_Yline, init_lamdas
+from scripts.Loss import my_loss, get_max_min_values
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -37,7 +39,7 @@ if __name__ == '__main__':
 
     # Load config file
     cfg = OmegaConf.load(args.cfg)
-    outdir = Path(cfg.outdir) / cfg.data.red / cfg.data.target /cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
+    outdir = Path(cfg.outdir) / cfg.data.red /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
     weights_dir = outdir / 'weights'
     weights_dir.mkdir(parents=True, exist_ok=True)
 
@@ -54,17 +56,17 @@ if __name__ == '__main__':
     # Set network
     edge_index, edge_weights, net = load_net(cfg.data.red,cfg.data.red_path,device)
     pp.runpp(net)
-    Y_bus = get_Ybus(net)
-    Y_line = get_Yline(net)
-    v_mag_idx = net.bus.index.delete(net.gen.bus.values).delete(net.ext_grid.bus.values).values.astype(int)
+    Y_bus = get_Ybus(net,device)
+    Y_line = get_Yline(net,device)
+    max_ika = torch.Tensor(net.line["max_i_ka"]).to(device)
     
     # Load data
-    train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, device)
+    train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.red, device)
 
     torch.autograd.set_detect_anomaly(True)
 
-    global dual_variables = init_lamdas(net)
-    min_vector, max_vector = get_max_min_values(net)
+    dual_variables = init_lamdas(net,device)
+    min_vector, max_vector = get_max_min_values(net,device)
 
     num_layers = len(cfg.model.layers) - 1
     num_nodes = len(net.bus)
@@ -77,8 +79,8 @@ if __name__ == '__main__':
     best_loss = 1000
     best_epoch = 0
     for epoch in range(num_epochs):
-        train_loss = run_epoch(model, train_loader, optimizer, criterion, Y_line, Y_bus, max_ika, epoch)
-        val_loss = evaluate(model, val_loader, criterion, Y_line, Y_bus, max_ika, epoch)
+        train_loss = run_epoch(model, train_loader, optimizer, criterion, Y_line, Y_bus, max_ika,dual_variables, epoch, writer)
+        val_loss = evaluate(model, val_loader, criterion, Y_line, Y_bus, max_ika, dual_variables, epoch, writer)
         print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
         if val_loss < best_loss:
@@ -99,7 +101,7 @@ if __name__ == '__main__':
             break
 
     # Evaluate the model on the test set
-    test_loss = evaluate(model, test_loader, criterion, Y_line, Y_bus, max_ika,epoch,test=True)
+    test_loss = evaluate(model, test_loader, criterion, Y_line, Y_bus, max_ika,epoch, writer,test=True)
     print(f"Test Loss: {test_loss:.4f}")
 
 

@@ -1,5 +1,6 @@
 
 import torch
+import numpy as np
 # import pandapower as pp
 
 def get_max_q(net):
@@ -13,7 +14,7 @@ def get_max_q(net):
     q_max[net.ext_grid.iloc[idx].bus] = net.ext_grid.iloc[idx].max_q_mvar
   return q_min/ net.sn_mva,q_max/net.sn_mva
 
-def get_max_min_values(net):
+def get_max_min_values(net,device):
     N = len(net.bus.index)
 
     min_voltages_pu = torch.ones(N)*0.8
@@ -57,10 +58,7 @@ def cost_function_voltage(V_mag):
   cost = (V_mag - 1)**2
   return torch.sum(cost,axis=-1)
 
-def my_loss(U,X,Y_line,Y_bus,ika_max,v_mag_idx,dual_steps, dual_step_iter=1,update_dual=True):
-  global dual_variables
-  # global hist_dual_variables
-  # global hist_AC_flow_penalty_real_mean
+def my_loss(U,X,Y_line,Y_bus,ika_max,dual_variables):
   dual_acflow_real = dual_variables[0]
   dual_acflow_imag = dual_variables[1]
   dual_lines = dual_variables[2]
@@ -78,16 +76,13 @@ def my_loss(U,X,Y_line,Y_bus,ika_max,v_mag_idx,dual_steps, dual_step_iter=1,upda
 
   
   # AC flow penalty
+  AC_flow = constraint_violation_power_flow(V_mag, delta, p, q, Y_bus)
 
-  for i in range(dual_step_iter):
-
-    AC_flow = constraint_violation_power_flow(V_mag, delta, p, q, Y_bus)
-
-    AC_flow_penalty_real = equality_penalty(torch.real(AC_flow))
-    AC_flow_penalty_imag = equality_penalty(torch.imag(AC_flow))
+  AC_flow_penalty_real = equality_penalty(torch.real(AC_flow))
+  AC_flow_penalty_imag = equality_penalty(torch.imag(AC_flow))
 
   # Objective cost
-  objective = cost_function_voltage(V_mag[:, v_mag_idx])
+  objective = cost_function_voltage(V_mag)
 
   # Sum of all penalties
   loss =  objective  + torch.mv(AC_flow_penalty_real,dual_acflow_real) +  torch.mv(AC_flow_penalty_imag,dual_acflow_imag) # + torch.mv(Sij_penalty,dual_lines)  

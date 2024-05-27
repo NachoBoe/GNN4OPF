@@ -1,4 +1,4 @@
-outdir: runs
+outdir: runs_unsup
 
 model:
   layers: [3,512, 2048, 2048, 2048, 512, 4] # La ultima es out_dim
@@ -6,14 +6,15 @@ model:
 
 
 data:
-  data_path: ../data/data_reactiva/uniforme_07_13_red118
-  red: '118' # 30 o 118
-  normalize_X: True
+  data_path: /home/iboero/grafos_proyecto/data_reactiva
+  red: '30' # 30 o 118
+  red_path: None
+  normalize_X: False
 
 training:
   device: 'cuda'
   batch_size: 128
-  lr: 1e-4
+  lr: 1e-3
   num_epochs: 500
   early_stopping: 30
   betas: [0.9, 0.999]

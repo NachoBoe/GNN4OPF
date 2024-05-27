@@ -1,0 +1,25 @@
+outdir: runs_unsup
+
+model:
+  layers: [3,512, 2048, 2048, 2048, 512, 4] # La ultima es out_dim
+  K: [2,2,2,2,2,2]
+
+
+data:
+  data_path: /home/iboero/grafos_proyecto/data_reactiva
+  red: '30' # 30 o 118
+  red_path: None
+  normalize_X: False
+
+training:
+  device: 'cuda'
+  batch_size: 128
+  lr: 1e-4
+  num_epochs: 500
+  early_stopping: 30
+  betas: [0.9, 0.999]
+  weight_decay: 0
+  seed: 42
+  metric_frec: 30
+  initial_metric_epoch: 0
+  batch_norm: True # Booleano

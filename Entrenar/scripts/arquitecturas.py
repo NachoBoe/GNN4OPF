@@ -1,9 +1,18 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import ReLU, LogSoftmax, BatchNorm1d, LeakyReLU
 from torch_geometric.nn import GCNConv, TAGConv
 from torch_geometric.nn.norm import BatchNorm
 
+def non_linearity(U, min, max):
+  ''' U is the output of the GNN, BxNx3 (Qgen, V, angle)
+      a and b Nx3 are the upper and lower limits for the three magnitudes '''
+  a_batch = min.repeat(U.shape[0],1,1)
+  b_batch = max.repeat(U.shape[0],1,1)
+
+  gamma = a_batch + (b_batch-a_batch) / (1 + torch.exp(U))
+  return gamma
 
 class GNNUnsupervised(nn.Module):
     def __init__(self, dim, edge_index, Y_bus, num_layers, K,val_min,val_max, num_nodes,batch_norm=True):
