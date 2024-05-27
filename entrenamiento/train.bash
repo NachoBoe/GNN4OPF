@@ -1,20 +1,21 @@
 #!/bin/bash
 
 # Define las listas de hiperparámetros a probar
-batch_norm_options=(True False)
+batch_norm_options=(True)
 device_options=('cuda')
 batch_size_options=(64 128)
 lr_options=(1e-4 1e-5)
-red_options=('uru')
-K_options=("[4,4,4]" "[3,3,3]" "[5,5,5]")
-layers_options=("[3,64,64,1]" "[3,256,256,1]" "[3,512,512,1]")
-target_options=('vm_pu_opt')
+red_options=('30' '118')
+K_options=("[2,2,2,2,2,2]")
+layers_options=("[3,512,2048,2048,2048,512,4]")
+dual_coef_real_options=(1 0.1 0.01)
+dual_coef_imag_options=(1 0.1 0.01)
 
 # Tomar model_option de la línea de comandos
 model_option=$1
 
 # Calcula el total de combinaciones posibles
-total_combinations=$((${#batch_norm_options[@]} * 1 * ${#device_options[@]} * ${#batch_size_options[@]} * ${#lr_options[@]} * ${#red_options[@]} * ${#K_options[@]} * ${#layers_options[@]}))
+total_combinations=$((${#batch_norm_options[@]} * 1 * ${#device_options[@]} * ${#batch_size_options[@]} * ${#lr_options[@]} * ${#red_options[@]} * ${#K_options[@]} * ${#layers_options[@]} * ${#dual_coef_real_options[@]} * ${#dual_coef_imag_options[@]}))
 
 # Contador para correr procesos en paralelo hasta un máximo de 1 para depuración
 max_jobs=1
@@ -23,34 +24,30 @@ count=0
 
 generate_yaml_config() {
     bn=$1
-    m=$2
-    dev=$3
-    bs=$4
-    r=$5
-    k="${6//[\[\]]/}"
-    ly="${7//[\[\]]/}"
-    lr=$8
-    t=$9
+    dev=$2
+    bs=$3
+    r=$4
+    k="${5//[\[\]]/}"
+    ly="${6//[\[\]]/}"
+    lr=$7
+    dcr=$8
+    dci=$9
 
-    config_name="config_${m}_red${r}_bs${bs}_lr${lr//.}"
-    filename="configs_reactiva/${config_name}.yaml"
+    config_name="config_bash"
+    filename="configs/${config_name}.yaml"
 
     cat <<EOF > "$filename"
-outdir: runs
+outdir: ../resultados/runs
 
 model:
-  batch_norm: $bn
-  model: $m
-  layers: [$ly]
+  layers: [$ly] # La ultima es out_dim
   K: [$k]
 
 data:
-  data_path: ../data/data_reactiva/uru
-  target: '$t'
-  red: '$r'
-  red_path: '/home/iboero/grafos_proyecto/uy_pp_net_v13_(sin_eolico_ni_solar).p'
+  data_path: /home/iboero/Tesis/unsupervised_ieee/GNN4OPF/data
+  red: '$r' # 30 o 118
+  red_path: None
   normalize_X: False
-  normalize_Y: False
 
 training:
   device: '$dev'
@@ -61,8 +58,10 @@ training:
   betas: [0.9, 0.999]
   weight_decay: 0
   seed: 42
-  initial_metric_epoch: 501
-  metric_frec: 501
+  metric_frec: 30
+  initial_metric_epoch: 0
+  batch_norm: $bn # Booleano
+  dual_coefs: [$dcr, $dci, 0] # dual_acflow_real, dual_acflow_imag, dual_lines 
 EOF
 
     echo "$filename"
@@ -75,9 +74,10 @@ for batch_size in "${batch_size_options[@]}"; do
 for lr in "${lr_options[@]}"; do
 for K in "${K_options[@]}"; do
 for layers in "${layers_options[@]}"; do
-for target in "${target_options[@]}"; do
-  yaml_file=$(generate_yaml_config $batch_norm $model_option $device $batch_size $red $K $layers $lr $target)
-
+for dual_coef_real in "${dual_coef_real_options[@]}"; do
+for dual_coef_imag in "${dual_coef_imag_options[@]}"; do
+  yaml_file=$(generate_yaml_config $batch_norm $device $batch_size $red $K $layers $lr $dual_coef_real $dual_coef_imag)
+  
   # Ejecutar en background
   python train.py --cfg "$yaml_file" &
   let jobs+=1
@@ -92,6 +92,7 @@ for target in "${target_options[@]}"; do
     jobs=0
   fi
 
+done
 done
 done
 done

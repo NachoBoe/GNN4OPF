@@ -69,7 +69,7 @@ def load_net(red,red_path,device="cuda"):
 def load_data(data_path, batch_size, normalize_X, red, device):
     
     # Levantar los datos
-    X_tensor = (torch.Tensor(np.load(data_path+f'/PlQlPg{red}.npy') ) / 100).to(device)
+    X_tensor = (torch.Tensor(np.load(data_path+f'/red{red}/input.npy') ) / 100).to(device)
 
     dataset = TensorDataset(X_tensor)
     X_train,X_test = train_test_split(dataset,test_size=0.2,random_state=42)

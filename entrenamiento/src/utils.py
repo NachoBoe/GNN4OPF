@@ -28,14 +28,14 @@ def check_AC_flow(net, tol=1e-5):
 
     return AC_flow<tol
 
-def init_lamdas(net,device):
+def init_lamdas(net,dual_coefs,device):
     N =  len(net.bus.index)
     E = len(net.line)
     hist_dual_variables = []
     hist_AC_flow_penalty_real_mean = []
-    dual_acflow_real = torch.ones(N).to(device) * 1e-1
-    dual_acflow_imag = torch.ones(N).to(device) * 1e-1
-    dual_lines = torch.ones(E).to(device)
+    dual_acflow_real = torch.ones(N).to(device) * dual_coefs[0]
+    dual_acflow_imag = torch.ones(N).to(device) * dual_coefs[1]
+    dual_lines = torch.ones(E).to(device) * dual_coefs[2]
     dual_variables = (dual_acflow_real, dual_acflow_imag, dual_lines)
     return dual_variables
 

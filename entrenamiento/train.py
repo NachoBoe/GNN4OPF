@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     torch.autograd.set_detect_anomaly(True)
 
-    dual_variables = init_lamdas(net,device)
+    dual_variables = init_lamdas(net,cfg.training.dual_coefs,device)
     min_vector, max_vector = get_max_min_values(net,device)
 
     num_layers = len(cfg.model.layers) - 1
@@ -114,5 +114,5 @@ writer.add_hparams(
         'optimizer': 'Adam',
         'batch_size': cfg.training.batch_size,
     },
-    {'hparam/accuracy': best_acc})
+    {'hparam/val_loss': best_loss})
 writer.close()
