@@ -1,0 +1,25 @@
+outdir: runs
+
+model:
+  batch_norm: True # Booleano
+  model: GNN_local # Puede ser GNN_local, GNN_global, FCNN_glocal, FCNN_global
+  layers: [3, 64, 128, 1] # La ultima dimension
+  K: [4, 4, 4]
+
+data:
+  data_path: ../data/data_reactiva/uniforme_07_13_red118
+  red: '118' # 30 o 118
+  normalize_X: True
+  normalize_Y: False
+
+training:
+  device: 'cuda'
+  batch_size: 128
+  lr: 1e-4
+  num_epochs: 500
+  early_stopping: 30
+  betas: [0.9, 0.999]
+  weight_decay: 0
+  seed: 42
+  metric_frec: 30
+  initial_metric_epoch: 0
