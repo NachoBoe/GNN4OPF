@@ -1,2 +1,2 @@
-Entrenar/runs/
-Entrenar/runs_unsup/
+resultados/runs/
+*.npy
