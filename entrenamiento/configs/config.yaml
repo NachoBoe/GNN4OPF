@@ -6,16 +6,16 @@ model:
 
 
 data:
-  data_path: /home/iboero/grafos_proyecto/data_reactiva
+  data_path: /home/iboero/Tesis/unsupervised_ieee/GNN4OPF/data
   red: '30' # 30 o 118
   red_path: None
-  normalize_X: False
+  normalize_X: True
 
 training:
   device: 'cuda'
   batch_size: 128
   lr: 1e-5
-  num_epochs: 500
+  num_epochs: 2
   early_stopping: 30
   betas: [0.9, 0.999]
   weight_decay: 0

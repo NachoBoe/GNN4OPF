@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-def load_net(red,red_path,device="cuda"):
+def load_net(red,red_path=None,device="cuda"):
     if red == '30':
         net = pp.networks.case30()
         z_trafos = net.trafo[['hv_bus', 'lv_bus']].to_numpy().astype(np.int32)
@@ -69,23 +69,32 @@ def load_net(red,red_path,device="cuda"):
 def load_data(data_path, batch_size, normalize_X, red, device):
     
     # Levantar los datos
-    X_tensor = (torch.Tensor(np.load(data_path+f'/red{red}/input.npy') ) / 100).to(device)
+    # X_tensor = (torch.Tensor(np.load(data_path+f'/red{red}/input.npy') ) / 100).to(device)        
 
-    dataset = TensorDataset(X_tensor)
-    X_train,X_test = train_test_split(dataset,test_size=0.2,random_state=42)
-    X_train,X_val = train_test_split(X_train,test_size=0.1,random_state=42)
+    # dataset = TensorDataset(X_tensor)
+    # X_train,X_test = train_test_split(dataset,test_size=0.2,random_state=42)
+    # X_train,X_val = train_test_split(X_train,test_size=0.1,random_state=42)
+
+    X_tensor_train = (torch.Tensor(np.load(data_path+f'/red{red}/train/input.npy') ) / 100).to(device)        
+    X_tensor_val = (torch.Tensor(np.load(data_path+f'/red{red}/val/input.npy') ) / 100).to(device)        
+    X_tensor_test = (torch.Tensor(np.load(data_path+f'/red{red}/test/input.npy') ) / 100).to(device)        
+
 
     # Normalizar X
     if normalize_X:
-        mean = torch.mean(X_tensor,0)
+        mean = torch.mean(X_tensor_train,0)
 
-        std = torch.std(X_tensor,0)
+        std = torch.std(X_tensor_train,0)
         std[std == 0.] = float('inf')
         
-        X_train  = (X_train - mean) / std
-        X_val  = (X_val - mean) / std
-        X_test  = (X_test - mean) / std
+        X_tensor_train  = (X_tensor_train - mean) / std
+        X_tensor_val  = (X_tensor_val - mean) / std
+        X_tensor_test  = (X_tensor_test - mean) / std
 
+    X_train = TensorDataset(X_tensor_train)
+    X_val = TensorDataset(X_tensor_val)
+    X_test = TensorDataset(X_tensor_test)
+    
     # dataset_train = TensorDataset(X_train)
     # dataset_val = TensorDataset(X_val)
     # dataset_test = TensorDataset(X_test)

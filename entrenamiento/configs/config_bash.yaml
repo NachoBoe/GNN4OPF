@@ -6,7 +6,7 @@ model:
 
 data:
   data_path: /home/iboero/Tesis/unsupervised_ieee/GNN4OPF/data
-  red: '30' # 30 o 118
+  red: '118' # 30 o 118
   red_path: None
   normalize_X: False
 
@@ -22,4 +22,4 @@ training:
   metric_frec: 30
   initial_metric_epoch: 0
   batch_norm: True # Booleano
-  dual_coefs: [1, 1, 0] # dual_acflow_real, dual_acflow_imag, dual_lines 
+  dual_coefs: [0.01, 0.01, 0] # dual_acflow_real, dual_acflow_imag, dual_lines 
