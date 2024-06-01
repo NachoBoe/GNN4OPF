@@ -19,10 +19,12 @@ from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
 # sys.path.append(str(Path(__file__).parents[1]))
-from scripts.arquitecturas import GNN_global, FCNN_global, GNN_Local
-from scripts.Data_loader import load_net, load_data
-from scripts.metric import NormalizedError
-from scripts.train_eval import run_epoch, evaluate
+from src.arquitecturas import GNN_global, FCNN_global, GNN_Local
+from src.Data_loader import load_net, load_data
+from src.metric import NormalizedError
+from src.train_eval import run_epoch, evaluate
+
+import json 
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -99,15 +101,15 @@ for epoch in range(cfg.training.num_epochs):
         torch.save(model.state_dict(), weights_dir / 'best_model.pt')
         ## save a json with the best values
         data = {
-        'model_name': outdir,
+        'model_name': str(outdir),
         'val_loss': val_loss,
         'val_metric': val_metric,
         'val_p_loss': last_val_metric_ploss
         }
 
     # Serialize JSON data and write it to a file
-    with open('outdir/best_model_info.json', 'w') as file:
-        json.dump(data, file)
+        with open(outdir / 'best_model_info.json', 'w') as file:
+            json.dump(data, file)
         
     # Early stopping
     if epoch - best_epoch > cfg.training.early_stopping:

@@ -10,7 +10,7 @@ data:
   data_path: ../data/data_reactiva/uniforme_07_13_red118
   red: '118' # 30 o 118
   normalize_X: True
-  normalize_Y: False
+  normalize_Y: True
 
 training:
   device: 'cuda'

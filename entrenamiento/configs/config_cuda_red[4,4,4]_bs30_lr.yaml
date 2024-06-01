@@ -1,21 +1,21 @@
 outdir: runs
 
 model:
-  batch_norm: False
-  model: FCNN_global
-  layers: [3,512,512,1]
-  K: [5,5,5]
+  batch_norm: True
+  model: cuda
+  layers: [1e-3]
+  K: [3,256,256,1]
 
 data:
-  data_path: ../data/data_reactiva/uniforme_07_13_red30
-  red: '30'
+  data_path: ../data/red[4,4,4]
+  red: '[4,4,4]'
   normalize_X: True
   normalize_Y: False
 
 training:
-  device: 'cuda'
-  batch_size: 64
-  lr: 1e-3
+  device: '64'
+  batch_size: 30
+  lr: 
   num_epochs: 500
   early_stopping: 30
   betas: [0.9, 0.999]

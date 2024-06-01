@@ -31,7 +31,7 @@ generate_yaml_config() {
     lr=$8
 
     config_name="config_${m}_red${r}_bs${bs}_lr${lr//.}"
-    filename="configs_reactiva/${config_name}.yaml"
+    filename="configs/${config_name}.yaml"
 
     cat <<EOF > "$filename"
 outdir: runs
@@ -43,7 +43,7 @@ model:
   K: [$k]
 
 data:
-  data_path: ../data/uniforme_07_13_red$r
+  data_path: ../data/red$r
   red: '$r'
   normalize_X: True
   normalize_Y: False
@@ -57,7 +57,7 @@ training:
   betas: [0.9, 0.999]
   weight_decay: 0
   seed: 42
-  initial_metric_epoch: 10
+  initial_metric_epoch: 501
   metric_frec: 30
 EOF
 
