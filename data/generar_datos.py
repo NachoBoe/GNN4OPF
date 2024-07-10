@@ -20,21 +20,25 @@ import argparse
 
 # Configurar argumentos de línea de comando
 parser = argparse.ArgumentParser(description="Ejecutar simulación de pandapower con una red específica.")
-parser.add_argument("red", type=str, choices=["30", "118"], help="Especificar el número de la red: '30' o '118'")
+parser.add_argument("--red", type=str, choices=["30", "118"], help="Especificar el número de la red: '30' o '118'")
 args = parser.parse_args()
 
 # Usar el argumento red
 red = args.red
 
+# agregar seed
+np.random.seed(0)
 
 if red == "30":
   net = pp.networks.case30()
   net.line["max_loading_percent"] *= 1.1
+  net.ext_grid.min_q_mvar = -50
 
 elif red == "118":
   net = pp.networks.case118()
   net.bus["max_vm_pu"] = 1.1
   net.bus["min_vm_pu"] = 0.9
+  net.line["max_i_ka"] /= 20
 
 # Permitir solo a los generadores cambiar su potencia al resolver opf
 net.load['controllable'] = False
@@ -80,10 +84,11 @@ for i in range(10000):
       X.append(X_i)
     except:
       print("no convergio")
+
 X = np.array(X)
 Y = np.array(Y)
-np.save(f'./red{red}/input_check.npy',X)
-np.save(f'./red{red}/vm_pu_opt_check.npy',Y)
+np.save(f'./red{red}/input_19-6.npy',X)
+np.save(f'./red{red}/vm_pu_opt_19-6.npy',Y)
 
 
 

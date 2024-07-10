@@ -13,7 +13,7 @@ def run_epoch(model, train_loader, optimizer, criterion,calculate_ploss_metric,n
     for idx, data in enumerate(train_loader):
         optimizer.zero_grad()
         output = model(data[0])
-        target = data[1]
+        target = data[1].unsqueeze(-1)
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
@@ -55,7 +55,7 @@ def evaluate(model, data_loader, criterion,calculate_ploss_metric,net,epoch=None
     with torch.no_grad():
         for idx, data in enumerate(data_loader):
             output = model(data[0])
-            target = data[1]
+            target = data[1].unsqueeze(-1)
             loss = criterion(output, target)  # target should contain true values for nodes with missing features
             total_loss += loss.item()
             # Calcular la métrica

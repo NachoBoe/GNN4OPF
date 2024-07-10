@@ -1,0 +1,33 @@
+outdir: ../resultados/runs_06-24
+model:
+  batch_norm: true
+  model: GNN_local
+  layers:
+  - 3
+  - 32
+  - 32
+  - 32
+  - 1
+  K:
+  - 2
+  - 2
+  - 2
+  - 2
+data:
+  data_path: ../data/red30
+  red: '30'
+  normalize_X: true
+  normalize_Y: false
+training:
+  device: cuda
+  batch_size: 32
+  lr: 0.0005671461986803759
+  num_epochs: 500
+  early_stopping: 30
+  betas:
+  - 0.9
+  - 0.999
+  weight_decay: 0
+  seed: 42
+  metric_frec: 30
+  initial_metric_epoch: 0

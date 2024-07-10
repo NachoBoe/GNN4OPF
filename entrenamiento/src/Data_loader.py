@@ -62,22 +62,12 @@ def load_net(red,device="cuda"):
 
 
 def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
-    
     # Levantar los datos
-    # X = np.load(os.path.join(data_path, 'input.npy'))
-    # y = np.load(os.path.join(data_path, 'vm_pu_opt.npy'))
-
-
-    # # Separar en X e Y
-    # X_tensor = torch.Tensor(X).to(device)
-    # y_tensor = torch.Tensor(y[:,:,0:1]).to(device)
-
-    # # dataset = TensorDataset(X_tensor, y_tensor)
-    # X_train,X_val,y_train,y_val = train_test_split(X_tensor,y_tensor,test_size=0.2,random_state=42)
+ 
     # X_train,X_test,y_train,y_test = train_test_split(X_train,y_train,test_size=0.1,random_state=42)
     X_tensor_train = (torch.Tensor(np.load(os.path.join(data_path, 'train/input.npy')))).to(device) 
     y_tensor_train = (torch.Tensor(np.load(os.path.join(data_path, 'train/vm_pu_opt.npy')))).to(device)       
-    X_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, 'val/input.npy')))).to(device) 
+    X_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, 'val/input.npy')))).to(device)   
     y_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, 'val/vm_pu_opt.npy')))).to(device)       
     X_tensor_test = (torch.Tensor(np.load(os.path.join(data_path, 'test/input.npy')))).to(device)        
     y_tensor_test = (torch.Tensor(np.load(os.path.join(data_path, 'test/vm_pu_opt.npy')))).to(device)
@@ -94,9 +84,7 @@ def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
         X_tensor_val  = (X_tensor_val - mean) / std
         X_tensor_test  = (X_tensor_test - mean) / std
 
-    # X_train = TensorDataset(X_tensor_train)
-    # X_val = TensorDataset(X_tensor_val)
-    # X_test = TensorDataset(X_tensor_test)
+ 
 
     if normalize_Y:
         mean = torch.mean(y_tensor_train,0)
@@ -108,32 +96,7 @@ def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
         y_tensor_val  = (y_tensor_val - mean) / std
         y_tensor_test  = (y_tensor_test - mean) / std
 
-    # y_train = TensorDataset(y_tensor_train)
-    # y_val = TensorDataset(y_tensor_val)
-    # y_test = TensorDataset(y_tensor_test)
-
-    # # Normalizar X
-    # if normalize_X:
-    #     mean = torch.mean(X_tensor,0)
-
-    #     std = torch.std(X_tensor,0)
-    #     std[std == 0.] = float('inf')
-        
-    #     X_train  = (X_train - mean) / std
-    #     X_val  = (X_val - mean) / std
-    #     X_test  = (X_test - mean) / std
-
-    # Normalizar y
-    # if normalize_Y:
-    #     mean_y = torch.mean(y_train,0)
-
-    #     std_y = torch.std(y_train,0)
-    #     std_y[std_y == 0.] = float('inf')
-
-    #     y_train  = (y_train - mean_y) / std_y
-    #     y_val  = (y_val - mean_y) / std_y
-    #     y_test  = (y_test - mean_y) / std_y
-
+ 
     dataset_train = TensorDataset(X_tensor_train, y_tensor_train)
     dataset_val = TensorDataset(X_tensor_val, y_tensor_val)
     dataset_test = TensorDataset(X_tensor_test, y_tensor_test)
