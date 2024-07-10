@@ -11,7 +11,7 @@ def non_linearity(U, min, max):
   a_batch = min.repeat(U.shape[0],1,1)
   b_batch = max.repeat(U.shape[0],1,1)
 
-  gamma = a_batch + (b_batch-a_batch) / (1 + torch.exp(U))
+  gamma = a_batch + (b_batch-a_batch)*torch.sigmoid(U)
   return gamma
 
 class GNNUnsupervised(nn.Module):

@@ -1,23 +1,12 @@
 import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import sys
-# import torchvision
-# import torchvision.transforms as transforms
-# import sklearn.metrics as metrics
-# import pandas as pd
-# import numpy as np
 import os
 import json
 import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
 from datetime import datetime
-# from torch_geometric.data import Data
 import pandapower as pp
 import networkx as nx
-# from torch.utils.data import DataLoader, TensorDataset
-# from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
 # sys.path.append(str(Path(__file__).parents[1]))
@@ -77,7 +66,7 @@ if __name__ == '__main__':
 
     # Train the model
     num_epochs = cfg.training.num_epochs
-    best_loss = 1000
+    best_loss = torch.inf
     best_epoch = 0
     for epoch in range(num_epochs):
         train_loss = run_epoch(model, train_loader, optimizer, criterion, Y_line, Y_bus, max_ika,dual_variables, epoch, writer)

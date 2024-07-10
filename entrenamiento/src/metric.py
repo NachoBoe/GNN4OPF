@@ -95,6 +95,8 @@ def feas_and_volt_metric(model,val_loader,net):
 
     idxs_gen = net.bus.index.get_indexer(list(net.gen.bus.values))
     idxs_load = net.bus.index.get_indexer(list(net.load.bus.values))
+    idxs_shunts = net.bus.index.get_indexer(list(net.sgen[net.sgen['controllable']==True].bus.values))
+    idxs_sgen = net.bus.index.get_indexer(list(net.sgen[net.sgen['controllable']==False].bus.values))
 
     feasibilty_metric = 0
     v_setpoint_metric = 0
@@ -102,29 +104,38 @@ def feas_and_volt_metric(model,val_loader,net):
 
     for x in val_loader:
         output = model(x[0]).detach().cpu()
-        p_ext_grid, q_gen, vm_pu_gen, ang_gen = output[:,:,0], output[:,:,1], output[:,:,2], output[:,:,3]
+        p_ext_grid, q_gen, q_shunts, vm_pu_gen, ang_gen = output[:,:,0], output[:,:,1], output[:,:,2], output[:,:,3], output[:,:,4]
         batch_size = vm_pu_gen.shape[0]
         feas_count = 0
         for i in range(batch_size):
             net.gen.vm_pu = vm_pu_gen[i][idxs_gen].detach().cpu().numpy()
+            net.sgen[net.sgen['controllable']==True].q_mvar = q_shunts[i][idxs_shunts].detach().cpu().numpy() * 100
             net.load.p_mw = x[0][i,idxs_load,0].detach().cpu().numpy() * 100 # para pasar los voltajes a valores no pu
             net.load.q_mvar = x[0][i,idxs_load,1].detach().cpu().numpy() * 100 # para pasar los voltajes a valores no pu
             net.gen.p_mw = x[0][i,idxs_gen,2].detach().cpu().numpy() * 100 # para pasar los voltajes a valores no pu
-            try:
-                pp.runpp(net,numba=False)
+            net.sgen[net.sgen['controllable']==False].p_mw = x[0][i,idxs_sgen,3].detach().cpu().numpy() * 100 # para pasar los voltajes a valores no pu
+            ## print all
+            print("net.gen.vm_pu",net.gen.vm_pu)
+            print("net.sgen[net.sgen['controllable']==True].q_mvar",net.sgen[net.sgen['controllable']==True].q_mvar)
+            print("net.load.p_mw",net.load.p_mw)
+            print("net.load.q_mvar",net.load.q_mvar)
+            print("net.gen.p_mw",net.gen.p_mw)
+            print("net.sgen[net.sgen['controllable']==False].p_mw",net.sgen[net.sgen['controllable']==False].p_mw)
+            # try:
+            pp.runpp(net,numba=False)
 
-                lineas_cargadas = relative_feas_error(net.res_line.loading_percent,0,100)
-                trafos_cargados = relative_feas_error(net.res_trafo.loading_percent,0,100)
-                gen_q = relative_feas_error(net.res_gen.q_mvar,net.gen.min_q_mvar,net.gen.max_q_mvar)
-                ext_grid_q = relative_feas_error(net.res_ext_grid.q_mvar,net.ext_grid.min_q_mvar,net.ext_grid.max_q_mvar)
-                ext_grid_p = relative_feas_error(net.res_ext_grid.p_mw,net.ext_grid.min_p_mw,net.ext_grid.max_p_mw)
-                vmpu = relative_feas_error(net.res_bus.vm_pu,net.bus.min_vm_pu,net.bus.max_vm_pu)
-                feasibilty_metric += (lineas_cargadas + trafos_cargados + gen_q + vmpu + ext_grid_p + ext_grid_q)
+            lineas_cargadas = relative_feas_error(net.res_line.loading_percent,0,100)
+            trafos_cargados = relative_feas_error(net.res_trafo.loading_percent,0,100)
+            gen_q = relative_feas_error(net.res_gen.q_mvar,net.gen.min_q_mvar,net.gen.max_q_mvar)
+            ext_grid_q = relative_feas_error(net.res_ext_grid.q_mvar,net.ext_grid.min_q_mvar,net.ext_grid.max_q_mvar)
+            # ext_grid_p = relative_feas_error(net.res_ext_grid.p_mw,net.ext_grid.min_p_mw,net.ext_grid.max_p_mw)
+            vmpu = relative_feas_error(net.res_bus.vm_pu,net.bus.min_vm_pu,net.bus.max_vm_pu)
+            feasibilty_metric += (lineas_cargadas + trafos_cargados + gen_q + vmpu  + ext_grid_q)
 
-                v_setpoint_metric += np.abs(net.res_bus.vm_pu.values - 1).sum()
-                feas_count += 1
-            except:
-                no_conv_count += 1
+            v_setpoint_metric += np.abs(net.res_bus.vm_pu.values - 1).sum()
+            feas_count += 1
+            # except:
+            #     no_conv_count += 1
         if feas_count == 0:
             feasibilty_metric += 1000000
             v_setpoint_metric += 1000000

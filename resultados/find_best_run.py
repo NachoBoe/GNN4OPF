@@ -16,12 +16,15 @@ def find_best_run(path, k=10):
     voltage_setpoint = []
 
     for file in os.listdir(path):
-        with open(os.path.join(path, file,'best_model_info.json'), 'r') as f:
-            datos = json.load(f)
-        val_loss.append(datos['val_loss'])
-        feasibility.append(datos['feasibility_metric'])
-        voltage_setpoint.append(datos['voltaje_setpoint_metric'])
-        entrenamiento.append(datos['model_name'].split('/')[-1])
+        try: 
+            with open(os.path.join(path, file,'best_model_info.json'), 'r') as f:
+                datos = json.load(f)
+            val_loss.append(datos['val_loss'])
+            feasibility.append(datos['feasibility_metric'])
+            voltage_setpoint.append(datos['voltaje_setpoint_metric'])
+            entrenamiento.append(datos['model_name'].split('/')[-1])
+        except: 
+            pass
 
 
     indices_ordenados = sorted(range(len(voltage_setpoint)), key=lambda i: voltage_setpoint[i], reverse=False)
