@@ -7,7 +7,7 @@ batch_size_options=(64 128)
 lr_options=(1e-3 1e-4)
 red_options=('uru')
 K_options=("[4,4,4]" "[3,3,3]" "[5,5,5]")
-layers_options=("[3,64,64,1]" "[3,256,256,1]" "[3,512,512,1]")
+layers_options=("[4,64,64,1]" "[4,256,256,1]" "[4,512,512,1]")
 target_options=('q_switch_shunt_opt')
 
 # Tomar model_option de la línea de comandos
@@ -33,10 +33,10 @@ generate_yaml_config() {
     t=$9
 
     config_name="config_${m}_red${r}_bs${bs}_lr${lr//.}"
-    filename="configs_reactiva/${config_name}.yaml"
+    filename="configs/${config_name}.yaml"
 
     cat <<EOF > "$filename"
-outdir: runs
+outdir: ../resultados/runs
 
 model:
   batch_norm: $bn
@@ -45,10 +45,10 @@ model:
   K: [$k]
 
 data:
-  data_path: ../data/data_reactiva/uru
+  data_path: ../data/reduru
   target: '$t'
   red: '$r'
-  red_path: '/home/iboero/grafos_proyecto/uy_pp_net_v13_(sin_eolico_ni_solar).p'
+  red_path: '../data/red_uru.p'
   normalize_X: False
   normalize_Y: False
 

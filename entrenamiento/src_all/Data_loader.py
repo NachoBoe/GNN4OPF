@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-def load_net(red,red_path,target,device="cuda"):
+def load_net(red,red_path,device="cuda"):
     if red == '30':
         net = pp.networks.case30()
         z_trafos = net.trafo[['hv_bus', 'lv_bus']].to_numpy().astype(np.int32)
@@ -82,33 +82,33 @@ def load_net(red,red_path,target,device="cuda"):
     # idx_gens = idx_gen + idx_grid
     idx_Sgen_bus = net.sgen.bus.loc[net.sgen.controllable == True].to_list()
     idx_Sgens = [i for i, num in enumerate(idx_bus) if num in idx_Sgen_bus]
-    if target=='vm_pu_opt':
-        ids = idx_gens
-    elif target=='q_switch_shunt_opt':
-        ids = idx_Sgens
 
-    feature_mask = np.zeros(len(net.bus.index), dtype=int)
-    feature_mask[ids] = 1
+    feature_mask = np.zeros((len(net.bus.index),2), dtype=int)
+    feature_mask[idx_gens,0] = 1
+    feature_mask[idx_Sgens,1] = 1
     feature_mask = torch.Tensor(feature_mask).type(torch.int32).to(device)
-
-    print("edge_index",edge_index)
-    print("edge_weights",len(edge_weights))
 
     return num_nodes, num_gens, edge_index, edge_weights, feature_mask, net
 
 
 
-def load_data(data_path, batch_size, normalize_X, normalize_Y, target, device):
+def load_data(data_path, batch_size, normalize_X, normalize_Y, device):
     
     # Levantar los datos
-        # X_train,X_test,y_train,y_test = train_test_split(X_train,y_train,test_size=0.1,random_state=42)
     X_tensor_train = (torch.Tensor(np.load(os.path.join(data_path, 'train/input.npy')))).to(device) 
-    y_tensor_train = (torch.Tensor(np.load(os.path.join(data_path, f'train/{target}.npy')))).to(device)       
-    X_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, 'val/input.npy')))).to(device)   
-    y_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, f'val/{target}.npy')))).to(device)       
-    X_tensor_test = (torch.Tensor(np.load(os.path.join(data_path, 'test/input.npy')))).to(device)        
-    y_tensor_test = (torch.Tensor(np.load(os.path.join(data_path, f'test/{target}.npy')))).to(device)
+    q_switch_train = np.load(os.path.join(data_path, 'train/q_switch_shunt_opt.npy'))
+    vm_pu_train = np.load(os.path.join(data_path, 'train/vm_pu_opt.npy'))
+    y_tensor_train = (torch.Tensor(np.concatenate((vm_pu_train,q_switch_train),axis=2))).to(device)
 
+    X_tensor_val = (torch.Tensor(np.load(os.path.join(data_path, 'val/input.npy')))).to(device)
+    q_switch_val = np.load(os.path.join(data_path, 'val/q_switch_shunt_opt.npy'))
+    vm_pu_val = np.load(os.path.join(data_path, 'val/vm_pu_opt.npy'))
+    y_tensor_val = (torch.Tensor(np.concatenate((vm_pu_val,q_switch_val),axis=2))).to(device)
+
+    X_tensor_test = (torch.Tensor(np.load(os.path.join(data_path, 'test/input.npy')))).to(device)
+    q_switch_test = np.load(os.path.join(data_path, 'test/q_switch_shunt_opt.npy'))
+    vm_pu_test = np.load(os.path.join(data_path, 'test/vm_pu_opt.npy'))
+    y_tensor_test = (torch.Tensor(np.concatenate((vm_pu_test,q_switch_test),axis=2))).to(device)       
 
     # Normalizar X
     if normalize_X:

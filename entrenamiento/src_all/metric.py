@@ -24,23 +24,24 @@ class NormalizedError(nn.Module):
         Retorna:
         Tensor: Error normalizado.
         """
-        # Asegurarse de que las predicciones y los valores reales están en la CPU
-        y_pred = y_pred.cpu()
-        y_true = y_true.cpu()
+        # # Asegurarse de que las predicciones y los valores reales están en la CPU
+        # y_pred = y_pred.cpu()
+        # y_true = y_true.cpu()
 
         # Calcular la norma de la diferencia entre la predicción y el valor real
-        numerator = torch.norm(y_pred - y_true,dim=1)
+        y_pred_sh = y_pred[:,:,1]
+        y_true_sh = y_true[:,:,1]
+        y_pred_v = y_pred[:,:,0]
+        y_true_v = y_true[:,:,0]
 
-        # Calcular la norma del valor real
-        denominator = torch.norm(y_true,dim=1)
+        numerator_sh = torch.norm(y_pred_sh - y_true_sh,dim=1)
+        numerator_v = torch.norm(y_pred_v - y_true_v,dim=1)
+        denominator_sh = torch.norm(y_true_sh,dim=1)
+        denominator_v = torch.norm(y_true_v,dim=1)
 
-        # # Evitar la división por cero
-        # if denominator == 0:
-        #     return torch.tensor(0.0)
-
-        # Calcular y retornar el error normalizado
-        return torch.mean(torch.sqrt(numerator / denominator))
-
+        e_v = torch.mean(torch.sqrt(numerator_v / denominator_v))
+        e_sh = torch.mean(torch.sqrt(numerator_sh / denominator_sh))
+        return e_v , e_sh
 
 class PlossMetric(nn.Module):
     def __init__(self, net):

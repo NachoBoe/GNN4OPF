@@ -21,10 +21,10 @@ from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
 # sys.path.append(str(Path(__file__).parents[1]))
-from src.arquitecturas import GNN_global, FCNN_global, GNN_Local
-from src.Data_loader import load_net, load_data
-from src.metric import NormalizedError
-from src.train_eval import run_epoch, evaluate
+from src_all.arquitecturas import GNN_global, FCNN_global, GNN_Local
+from src_all.Data_loader import load_net, load_data
+from src_all.metric import NormalizedError
+from src_all.train_eval import run_epoch, evaluate
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 # Load config file
 cfg = OmegaConf.load(args.cfg)
-outdir = Path(cfg.outdir) / cfg.data.red / cfg.data.target /cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
+outdir = Path(cfg.outdir) / "all" / cfg.model.model /  datetime.now().isoformat().split('.')[0][5:].replace('T', '_')
 weights_dir = outdir / 'weights'
 weights_dir.mkdir(parents=True, exist_ok=True)
 
@@ -51,7 +51,7 @@ torch.manual_seed(cfg.training.seed)
 device = cfg.training.device
 
 # Set network
-num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,cfg.data.red_path,cfg.data.target,device)
+num_nodes, num_gens, edge_index, edge_weights, feature_mask, net = load_net(cfg.data.red,cfg.data.red_path,device)
 
 # Set model
 if cfg.model.model == 'GNN_global':
@@ -68,26 +68,28 @@ elif cfg.model.model == 'FCNN_local':
     model = GNN_Local(cfg.model.layers,edge_index,edge_weights,len(cfg.model.layers)-1,K,feature_mask,num_nodes,cfg.model.batch_norm).to(device)
 
 # Load data
-train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,cfg.data.target,device)
+train_loader, val_loader, test_loader = load_data(cfg.data.data_path, cfg.training.batch_size, cfg.data.normalize_X, cfg.data.normalize_Y,device)
 
 # Set optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.lr,betas=cfg.training.betas,weight_decay=cfg.training.weight_decay)
-criterion = nn.MSELoss()  # Change the loss function as needed
+criterion = nn.MSELoss(reduction="none")  # Change the loss function as needed
+criterion_weights = torch.tensor(cfg.training.criterion_weights).to(device)
 
 # Entrenamiento
-best_acc = 1000
+best_acc = torch.inf
 best_epoch = 0
 last_train_metric_ploss = -1.
 last_val_metric_ploss = -1.
 
 for epoch in range(cfg.training.num_epochs):
-    if epoch > cfg.training.initial_metric_epoch and epoch % cfg.training.metric_frec == 0:
-        calculate_ploss_metric = True
-    else:
-        calculate_ploss_metric = False
+    # if epoch > cfg.training.initial_metric_epoch and epoch % cfg.training.metric_frec == 0:
+    #     calculate_ploss_metric = True
+    # else:
+    #     calculate_ploss_metric = False
 
-    train_loss, train_metric, train_metric_ploss = run_epoch(model, train_loader, optimizer, criterion,calculate_ploss_metric, net, epoch,writer)
-    val_loss, val_metric, val_metric_ploss  = evaluate(model, val_loader, criterion, calculate_ploss_metric, net, epoch,writer)
+    calculate_ploss_metric = False
+    train_loss, train_metric, train_metric_ploss = run_epoch(model, train_loader, optimizer, criterion,criterion_weights,calculate_ploss_metric, net, epoch,writer)
+    val_loss, val_metric, val_metric_ploss  = evaluate(model, val_loader, criterion,criterion_weights, calculate_ploss_metric, net, epoch,writer)
     if train_metric_ploss != None:
         last_train_metric_ploss = train_metric_ploss
     if val_metric_ploss != None:

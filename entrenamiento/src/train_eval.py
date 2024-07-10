@@ -1,5 +1,5 @@
 import torch
-from scripts.metric import NormalizedError, PlossMetric
+from src.metric import NormalizedError, PlossMetric
 
 def run_epoch(model, train_loader, optimizer, criterion,calculate_ploss_metric,net, epoch=None,writer=None):
     model.train()
