@@ -30,7 +30,7 @@ red = args.red
 if red == "30":
   net = pp.networks.case30()
   net.line["max_loading_percent"] *= 1.1
-  net.ext_grid
+
 elif red == "118":
   net = pp.networks.case118()
 
