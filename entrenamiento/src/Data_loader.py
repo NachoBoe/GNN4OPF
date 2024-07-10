@@ -99,8 +99,8 @@ def load_data(data_path, batch_size, normalize_X, red, device):
     # dataset_val = TensorDataset(X_val)
     # dataset_test = TensorDataset(X_test)
 
-    train_loader = DataLoader(X_train, batch_size=batch_size)
-    val_loader = DataLoader(X_val, batch_size=batch_size)
-    test_loader = DataLoader(X_test, batch_size=batch_size)
+    train_loader = DataLoader(X_train, batch_size=batch_size, drop_last=True)
+    val_loader = DataLoader(X_val, batch_size=batch_size, drop_last=True)
+    test_loader = DataLoader(X_test, batch_size=batch_size, drop_last=True)
 
     return train_loader, val_loader, test_loader

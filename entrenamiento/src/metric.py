@@ -91,20 +91,30 @@ def relative_feas_error(x,x_min,x_max):
     error = np.max((np.zeros_like(x),x-x_max),axis=0) - np.min((np.zeros_like(x),x-x_min),axis=0)
     return (error/(x_max-x_min)).sum()
 
+
+def absolute_feas_error(x,x_min,x_max,tol=1e-4):
+    error_count = (((x-x_max)>tol) |  ((x-x_min)<-tol)).sum()
+    return error_count
+
 def feas_and_volt_metric(model,val_loader,net):
 
     idxs_gen = net.bus.index.get_indexer(list(net.gen.bus.values))
     idxs_load = net.bus.index.get_indexer(list(net.load.bus.values))
 
-    feasibilty_metric = 0
-    v_setpoint_metric = 0
-    no_conv_count = 0
-
+    feasibilty_metric_avg = 0
+    v_setpoint_metric_avg = 0
+    no_conv_count_avg = 0
+    unf_count_avg = 0
     for x in val_loader:
         output = model(x[0]).detach().cpu()
         p_ext_grid, q_gen, vm_pu_gen, ang_gen = output[:,:,0], output[:,:,1], output[:,:,2], output[:,:,3]
         batch_size = vm_pu_gen.shape[0]
         feas_count = 0
+    
+        feasibilty_metric = 0
+        v_setpoint_metric = 0
+        no_conv_count = 0
+        unf_count = 0
         for i in range(batch_size):
             net.gen.vm_pu = vm_pu_gen[i][idxs_gen].detach().cpu().numpy()
             net.load.p_mw = x[0][i,idxs_load,0].detach().cpu().numpy() * 100 # para pasar los voltajes a valores no pu
@@ -113,14 +123,16 @@ def feas_and_volt_metric(model,val_loader,net):
             try:
                 pp.runpp(net,numba=False)
 
-                lineas_cargadas = relative_feas_error(net.res_line.loading_percent,0,100)
-                trafos_cargados = relative_feas_error(net.res_trafo.loading_percent,0,100)
-                gen_q = relative_feas_error(net.res_gen.q_mvar,net.gen.min_q_mvar,net.gen.max_q_mvar)
-                ext_grid_q = relative_feas_error(net.res_ext_grid.q_mvar,net.ext_grid.min_q_mvar,net.ext_grid.max_q_mvar)
-                ext_grid_p = relative_feas_error(net.res_ext_grid.p_mw,net.ext_grid.min_p_mw,net.ext_grid.max_p_mw)
-                vmpu = relative_feas_error(net.res_bus.vm_pu,net.bus.min_vm_pu,net.bus.max_vm_pu)
+                lineas_cargadas = absolute_feas_error(net.res_line.loading_percent,0,115.5)
+                trafos_cargados = absolute_feas_error(net.res_trafo.loading_percent,0,100)
+                gen_q = absolute_feas_error(net.res_gen.q_mvar,net.gen.min_q_mvar,net.gen.max_q_mvar)
+                ext_grid_q = absolute_feas_error(net.res_ext_grid.q_mvar,net.ext_grid.min_q_mvar,net.ext_grid.max_q_mvar)
+                ext_grid_p = absolute_feas_error(net.res_ext_grid.p_mw,net.ext_grid.min_p_mw,net.ext_grid.max_p_mw)
+                vmpu = absolute_feas_error(net.res_bus.vm_pu,net.bus.min_vm_pu,net.bus.max_vm_pu)
+                is_unfeas = (lineas_cargadas + trafos_cargados + gen_q + vmpu + ext_grid_p + ext_grid_q)
                 feasibilty_metric += (lineas_cargadas + trafos_cargados + gen_q + vmpu + ext_grid_p + ext_grid_q)
-
+                if is_unfeas > 0:
+                    unf_count += 1
                 v_setpoint_metric += np.abs(net.res_bus.vm_pu.values - 1).sum()
                 feas_count += 1
             except:
@@ -128,9 +140,11 @@ def feas_and_volt_metric(model,val_loader,net):
         if feas_count == 0:
             feasibilty_metric += 1000000
             v_setpoint_metric += 1000000
+            unf_count += 1000000
         else:
-            feasibilty_metric /= feas_count
-            v_setpoint_metric /= feas_count
+            feasibilty_metric_avg += feasibilty_metric / feas_count
+            v_setpoint_metric_avg += v_setpoint_metric/ feas_count
+            unf_count_avg += unf_count / feas_count
 
-    return feasibilty_metric/len(val_loader), v_setpoint_metric/len(val_loader), no_conv_count
+    return unf_count_avg/len(val_loader), v_setpoint_metric_avg/len(val_loader), no_conv_count
 

@@ -1,23 +1,12 @@
 import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import sys
-# import torchvision
-# import torchvision.transforms as transforms
-# import sklearn.metrics as metrics
-# import pandas as pd
-# import numpy as np
 import os
 import json
 import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
 from datetime import datetime
-# from torch_geometric.data import Data
 import pandapower as pp
 import networkx as nx
-# from torch.utils.data import DataLoader, TensorDataset
-# from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
 # sys.path.append(str(Path(__file__).parents[1]))
@@ -84,10 +73,15 @@ if __name__ == '__main__':
         val_loss = evaluate(model, val_loader, criterion, Y_line, Y_bus, max_ika, dual_variables, epoch, writer)
         print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
+
         if val_loss < best_loss:
             best_loss = val_loss
             best_epoch = epoch
             best_model = model
+            torch.save(best_model.state_dict(), weights_dir / 'best_model.pt')
+
+        # prueba, borrar dsps
+        torch.save(model.state_dict(), weights_dir / 'model_prueba.pt')
 
         # Early stopping
         if epoch - best_epoch > cfg.training.early_stopping:
@@ -97,7 +91,7 @@ if __name__ == '__main__':
     # Run feasibility metric and voltaje setpoint metric
     feas_metric, voltaje_set_metric, no_conv_count = feas_and_volt_metric(best_model, val_loader, net)
     ## save a json with the best values and save best model
-    torch.save(best_model.state_dict(), weights_dir / 'best_model.pt')
+    
     data = {
     'model_name': str(outdir),
     'val_loss': val_loss,

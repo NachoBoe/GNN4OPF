@@ -1,19 +1,19 @@
 outdir: ../resultados/runs
 
 model:
-  layers: [3,512,2048,2048,2048,512,4] # La ultima es out_dim
-  K: [2,2,2,2,2,2]
+  layers: [3,512, 2048, 2048,2048,2048, 2048, 512, 4] # La ultima es out_dim
+  K: [2,2,2,2,2,2,2,2]
 
 data:
   data_path: /home/iboero/Tesis/unsupervised_ieee/GNN4OPF/data
-  red: '118' # 30 o 118
+  red: '30' # 30 o 118
   red_path: None
   normalize_X: False
 
 training:
   device: 'cuda'
-  batch_size: 64
-  lr: 1e-4
+  batch_size: 0
+  lr: 0
   num_epochs: 500
   early_stopping: 30
   betas: [0.9, 0.999]
@@ -21,5 +21,6 @@ training:
   seed: 42
   metric_frec: 30
   initial_metric_epoch: 0
-  batch_norm: True # Booleano
-  dual_coefs: [0.01, 0.01, 0] # dual_acflow_real, dual_acflow_imag, dual_lines 
+  batch_norm: True
+  use_edge_weights: True
+  dual_coefs: [0, 0, 0] # dual_acflow_real, dual_acflow_imag, dual_lines 

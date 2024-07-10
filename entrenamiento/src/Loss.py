@@ -52,13 +52,15 @@ def equality_penalty(U):
     Y = U**2
     return Y
 
-def cost_function_voltage(V_mag):
+def cost_function_voltage(V_mag, node_weihgts):
   ''' U is the output of the GNN, BxNx3 (Qgen, V, angle)
       a and b Nx3 are the upper and lower limits for the three magnitudes '''
   cost = (V_mag - 1)**2
+  if node_weihgts is not None:
+    cost = cost * node_weihgts
   return torch.sum(cost,axis=-1)
 
-def my_loss(U,X,Y_line,Y_bus,ika_max,dual_variables):
+def my_loss(U,X,Y_line,Y_bus,ika_max,dual_variables, node_weihgts):
   dual_acflow_real = dual_variables[0]
   dual_acflow_imag = dual_variables[1]
   dual_lines = dual_variables[2]
@@ -82,11 +84,10 @@ def my_loss(U,X,Y_line,Y_bus,ika_max,dual_variables):
   AC_flow_penalty_imag = equality_penalty(torch.imag(AC_flow))
 
   # Objective cost
-  objective = cost_function_voltage(V_mag)
+  objective = cost_function_voltage(V_mag, node_weihgts)
 
   # Sum of all penalties
   loss =  objective  + torch.mv(AC_flow_penalty_real,dual_acflow_real) +  torch.mv(AC_flow_penalty_imag,dual_acflow_imag) # + torch.mv(Sij_penalty,dual_lines)  
-
   loss = torch.mean(loss)
   return loss
 
